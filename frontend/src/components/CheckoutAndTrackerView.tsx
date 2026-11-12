@@ -233,40 +233,28 @@ export function CheckoutAndTrackerView({
               </div>
 
               {health?.paypalConfigured && health.paypalClientId ? (
-                <div className="space-y-2">
-                  <PayPalScriptProvider
-                    options={{
-                      clientId: health.paypalClientId,
-                      intent: 'authorize',
-                      currency: 'USD',
-                    }}
-                  >
-                    <PayPalButtons
-                      style={{ layout: 'vertical', height: 42, tagline: false }}
-                      createOrder={async () => onBackendCreateOrder(bundle.id)}
-                      onApprove={async (data) =>
-                        onBackendAuthorizeOrder(bundle.id, data.orderID)
-                      }
-                      onError={(err) =>
-                        onError(
-                          err instanceof Error
-                            ? err.message
-                            : 'PayPal Checkout failed'
-                        )
-                      }
-                    />
-                  </PayPalScriptProvider>
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={onSimAuthorize}
-                    className="w-full py-2 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-[11px] font-medium text-slate-500 cursor-pointer"
-                  >
-                    {isBusy
-                      ? 'Authorizing...'
-                      : 'Popup blocked? Instant Sandbox Test Hold'}
-                  </button>
-                </div>
+                <PayPalScriptProvider
+                  options={{
+                    clientId: health.paypalClientId,
+                    intent: 'authorize',
+                    currency: 'USD',
+                  }}
+                >
+                  <PayPalButtons
+                    style={{ layout: 'vertical', height: 42, tagline: false }}
+                    createOrder={async () => onBackendCreateOrder(bundle.id)}
+                    onApprove={async (data) =>
+                      onBackendAuthorizeOrder(bundle.id, data.orderID)
+                    }
+                    onError={(err) =>
+                      onError(
+                        err instanceof Error
+                          ? err.message
+                          : 'PayPal Checkout failed'
+                      )
+                    }
+                  />
+                </PayPalScriptProvider>
               ) : (
                 <button
                   type="button"
