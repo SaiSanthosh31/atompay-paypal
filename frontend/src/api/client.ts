@@ -8,6 +8,7 @@ import type {
 
 async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
+    signal: AbortSignal.timeout(15_000),
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
@@ -22,11 +23,27 @@ async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   return data;
 }
 
+export interface CatalogItemDto {
+  id: string;
+  scenarioId: string;
+  sku: string;
+  title: string;
+  sellerId: string;
+  sellerName: string;
+  category: string;
+  unitPrice: number;
+  quantity: number;
+  criticality: 'CRITICAL' | 'OPTIONAL';
+  faultMode: VendorFaultMode;
+}
+
 export const atomApi = {
   getHealth: () => apiJson<HealthResponse>('/api/health'),
 
   getScenarios: () =>
-    apiJson<{ scenarios: ScenarioPreset[] }>('/api/vendors/scenarios'),
+    apiJson<{ scenarios: ScenarioPreset[]; catalog?: CatalogItemDto[] }>(
+      '/api/vendors/scenarios'
+    ),
 
   setVendorFault: (legId: string, faultMode: VendorFaultMode) =>
     apiJson<{ ok: boolean; legId: string; faultMode: VendorFaultMode }>(

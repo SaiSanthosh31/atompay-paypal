@@ -86,7 +86,7 @@ Respond ONLY with valid JSON:
   ]
 }`;
 
-    const rawText = await generateWithTimeout(client, prompt, 0.3);
+    const rawText = await generateWithTimeout(client, prompt, 0.3, 8_000);
     const cleaned = rawText.replace(/^```json\s*|\s*```$/g, '');
     const parsed = JSON.parse(cleaned) as { items?: GeneratedCartItem[] };
     if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length < 2) {
@@ -141,41 +141,26 @@ async function generateWithTimeout(
   client: GoogleGenAI,
   contents: string,
   temperature: number,
-  timeoutMs = 12_000
+  timeoutMs = 2_500
 ): Promise<string> {
-  const candidates = Array.from(
-    new Set([
-      env.geminiModel,
-      'gemini-flash-latest',
-      'gemini-3-flash-preview',
-      'gemini-3.1-flash-lite-preview',
-    ])
+  const model = env.geminiModel || 'gemini-flash-latest';
+  const callPromise = client.models.generateContent({
+    model,
+    contents,
+    config: {
+      responseMimeType: 'application/json',
+      temperature,
+    },
+  });
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`Gemini timeout (${model})`)), timeoutMs)
   );
 
-  let lastErr: unknown;
-  for (const model of candidates) {
-    try {
-      const callPromise = client.models.generateContent({
-        model,
-        contents,
-        config: {
-          responseMimeType: 'application/json',
-          temperature,
-        },
-      });
-
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Gemini timeout (${model})`)), timeoutMs)
-      );
-
-      const response = await Promise.race([callPromise, timeoutPromise]);
-      const text = response.text?.trim() || '';
-      if (text) return text;
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  throw lastErr instanceof Error ? lastErr : new Error('All Gemini models failed');
+  const response = await Promise.race([callPromise, timeoutPromise]);
+  const text = response.text?.trim() || '';
+  if (!text) throw new Error('Empty Gemini response');
+  return text;
 }
 
 function buildFallbackAnalysis(legs: VendorLeg[]): DependencyAnalysisResult {
@@ -251,7 +236,7 @@ Respond ONLY with valid JSON matching this exact shape (no markdown fences):
   ]
 }`;
 
-    const rawText = await generateWithTimeout(client, prompt, 0.2);
+    const rawText = await generateWithTimeout(client, prompt, 0.2, 2_500);
     const cleaned = rawText.replace(/^```json\s*|\s*```$/g, '');
     const parsed = JSON.parse(cleaned) as {
       aiSummary?: string;
@@ -361,7 +346,7 @@ Reply ONLY with valid JSON:
   "reasoning": "concise 1-sentence justification"
 }`;
 
-    const rawText = await generateWithTimeout(client, prompt, 0.1);
+    const rawText = await generateWithTimeout(client, prompt, 0.1, 3_500);
     const cleaned = rawText.replace(/^```json\s*|\s*```$/g, '');
     const parsed = JSON.parse(cleaned) as {
       action?: 'SUBSTITUTE' | 'ABORT_AND_VOID';

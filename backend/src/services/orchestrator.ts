@@ -17,6 +17,7 @@ import {
   voidAuthorizationHold,
 } from './paypal.js';
 import {
+  getAllCatalogItems,
   getFaultMode,
   instantiateScenarioLegs,
   probeSellerLeg,
@@ -74,7 +75,7 @@ export async function createAndAnalyzeBundle(input: {
     SCENARIO_PRESETS[0];
 
   const catalogById = new Map(
-    SCENARIO_PRESETS.flatMap((s) => s.items.map((it) => [it.id, it]))
+    getAllCatalogItems().map((it) => [it.id, it])
   );
 
   let legs: VendorLeg[];

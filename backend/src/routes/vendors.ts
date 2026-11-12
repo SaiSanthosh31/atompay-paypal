@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import {
+  getAllCatalogItems,
   getFaultMode,
   resetAllFaults,
   SCENARIO_PRESETS,
@@ -21,7 +22,11 @@ vendorsRouter.get('/scenarios', (_req, res) => {
       faultMode: getFaultMode(item.id),
     })),
   }));
-  res.json({ scenarios: enriched });
+  const catalog = getAllCatalogItems().map((item) => ({
+    ...item,
+    faultMode: getFaultMode(item.id),
+  }));
+  res.json({ scenarios: enriched, catalog });
 });
 
 vendorsRouter.post('/:legId/fault', (req, res) => {

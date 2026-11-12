@@ -8,6 +8,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
+import type { CatalogItemDto } from '../api/client';
 import type { LegCriticality, ScenarioPreset } from '../types/atompay';
 
 export interface CartItem {
@@ -24,6 +25,7 @@ export interface CartItem {
 
 interface MarketplaceViewProps {
   scenarios: ScenarioPreset[];
+  catalog: CatalogItemDto[];
   cart: CartItem[];
   onAddToCart: (item: CartItem) => void;
   onAddBundle: (scenario: ScenarioPreset) => void;
@@ -46,6 +48,7 @@ const BUNDLE_LABELS: Record<string, string> = {
 
 export function MarketplaceView({
   scenarios,
+  catalog,
   cart,
   onAddToCart,
   onAddBundle,
@@ -60,6 +63,7 @@ export function MarketplaceView({
   isCheckingOut,
 }: MarketplaceViewProps) {
   const [activeKitId, setActiveKitId] = useState<string>('ALL');
+  const [activeCat, setActiveCat] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCustomForm, setShowCustomForm] = useState<boolean>(false);
   const [customTitle, setCustomTitle] = useState('');
@@ -68,21 +72,31 @@ export function MarketplaceView({
   const [customCriticality, setCustomCriticality] =
     useState<LegCriticality>('CRITICAL');
 
-  const allProducts = scenarios.flatMap((sc) =>
-    sc.items.map((item) => ({
-      ...item,
-      scenarioId: sc.id,
-    }))
-  );
+  const allProducts =
+    catalog.length > 0
+      ? catalog
+      : scenarios.flatMap((sc) =>
+          sc.items.map((item) => ({
+            ...item,
+            scenarioId: sc.id,
+          }))
+        );
+
+  const categories = [
+    'All',
+    ...Array.from(new Set(allProducts.map((p) => p.category))),
+  ];
 
   const q = searchQuery.trim().toLowerCase();
   const visibleProducts = allProducts.filter((p) => {
     if (activeKitId !== 'ALL' && p.scenarioId !== activeKitId) return false;
+    if (activeCat !== 'All' && p.category !== activeCat) return false;
     if (!q) return true;
     return (
       p.title.toLowerCase().includes(q) ||
       p.sellerName.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q)
+      p.category.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q)
     );
   });
 
@@ -212,52 +226,80 @@ export function MarketplaceView({
           </form>
         )}
 
-        {/* Single-Row Bundle Filter Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              type="button"
-              onClick={() => setActiveKitId('ALL')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition ${
-                activeKitId === 'ALL'
-                  ? 'bg-slate-900 text-white border-slate-900'
-                  : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              All
-            </button>
-            {scenarios.map((sc) => {
-              const active = activeKitId === sc.id;
-              const total = sc.items.reduce(
-                (s, i) => s + i.unitPrice * i.quantity,
-                0
-              );
-              return (
-                <button
-                  key={sc.id}
-                  type="button"
-                  onClick={() => setActiveKitId(sc.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition ${
-                    active
-                      ? 'bg-slate-900 text-white border-slate-900'
-                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  {BUNDLE_LABELS[sc.id] || sc.name} · ${total.toFixed(0)}
-                </button>
-              );
-            })}
+        {/* Kit & Part Category Filters */}
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveKitId('ALL');
+                  setActiveCat('All');
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition ${
+                  activeKitId === 'ALL' && activeCat === 'All'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                All ({allProducts.length})
+              </button>
+              {scenarios.map((sc) => {
+                const active = activeKitId === sc.id;
+                const total = sc.items.reduce(
+                  (s, i) => s + i.unitPrice * i.quantity,
+                  0
+                );
+                return (
+                  <button
+                    key={sc.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveKitId(sc.id);
+                      setActiveCat('All');
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium border cursor-pointer transition ${
+                      active
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {BUNDLE_LABELS[sc.id] || sc.name} · ${total.toFixed(0)}
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeScenario && (
+              <button
+                type="button"
+                onClick={() => onAddBundle(activeScenario)}
+                className="text-xs font-semibold text-[#0070BA] hover:text-[#003087] cursor-pointer"
+              >
+                Load Kit →
+              </button>
+            )}
           </div>
 
-          {activeScenario && (
-            <button
-              type="button"
-              onClick={() => onAddBundle(activeScenario)}
-              className="text-xs font-semibold text-[#0070BA] hover:text-[#003087] cursor-pointer"
-            >
-              Load Kit →
-            </button>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {categories.slice(1).map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => {
+                  setActiveCat(activeCat === cat ? 'All' : cat);
+                  setActiveKitId('ALL');
+                }}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border cursor-pointer transition ${
+                  activeCat === cat
+                    ? 'bg-blue-50 text-[#003087] border-blue-200'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Clean Product Grid */}

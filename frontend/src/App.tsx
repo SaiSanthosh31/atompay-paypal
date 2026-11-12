@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { atomApi } from './api/client';
+import { atomApi, type CatalogItemDto } from './api/client';
 import { CheckoutAndTrackerView } from './components/CheckoutAndTrackerView';
 import { LedgerGrid } from './components/LedgerGrid';
 import { type CartItem, MarketplaceView } from './components/MarketplaceView';
@@ -16,6 +16,7 @@ import type {
 export function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioPreset[]>([]);
+  const [catalog, setCatalog] = useState<CatalogItemDto[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [autoSubstitute, setAutoSubstitute] = useState<boolean>(true);
   const [activeBundle, setActiveBundle] = useState<BundleSession | null>(null);
@@ -36,8 +37,9 @@ export function App() {
   }, []);
 
   const loadScenarios = useCallback(async () => {
-    const { scenarios: list } = await atomApi.getScenarios();
+    const { scenarios: list, catalog: cat } = await atomApi.getScenarios();
     setScenarios(list);
+    if (cat) setCatalog(cat);
     return list;
   }, []);
 
@@ -276,6 +278,7 @@ export function App() {
         {activeTab === 'shop' && !activeBundle && (
           <MarketplaceView
             scenarios={scenarios}
+            catalog={catalog}
             cart={cart}
             onAddToCart={handleAddToCart}
             onAddBundle={handleAddBundle}
