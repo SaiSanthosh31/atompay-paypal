@@ -141,7 +141,7 @@ async function generateWithTimeout(
   client: GoogleGenAI,
   contents: string,
   temperature: number,
-  timeoutMs = 8_000
+  timeoutMs = 12_000
 ): Promise<string> {
   const candidates = Array.from(
     new Set([

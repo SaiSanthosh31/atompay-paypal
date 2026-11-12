@@ -23,6 +23,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState<AppTab>('shop');
   const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
   const [isGeneratingCart, setIsGeneratingCart] = useState<boolean>(false);
+  const [bundleNotice, setBundleNotice] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +94,7 @@ export function App() {
   const handleGenerateSmartCart = async (goal: string) => {
     try {
       setError(null);
+      setBundleNotice(null);
       setIsGeneratingCart(true);
       const { items } = await atomApi.generateCart(goal);
       setCart(
@@ -107,6 +109,7 @@ export function App() {
           criticality: item.criticality,
         }))
       );
+      setBundleNotice(`Loaded ${items.length} items for "${goal}" into your Cart on the right.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to build bundle');
     } finally {
@@ -278,6 +281,7 @@ export function App() {
             onAddBundle={handleAddBundle}
             onGenerateSmartCart={handleGenerateSmartCart}
             isGeneratingCart={isGeneratingCart}
+            bundleNotice={bundleNotice}
             onRemoveFromCart={handleRemoveFromCart}
             onToggleCriticality={handleToggleCriticality}
             autoSubstitute={autoSubstitute}
