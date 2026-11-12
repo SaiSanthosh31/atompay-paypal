@@ -87,6 +87,7 @@ export function CheckoutAndTrackerView({
     bundle.phase === 'COMMITTED' ||
     bundle.phase === 'PARTIAL_COMMITTED' ||
     bundle.phase === 'ROLLED_BACK';
+  const swappedCount = bundle.legs.filter((l) => Boolean(l.substitutedFrom)).length;
 
   return (
     <div className="space-y-4">
@@ -293,7 +294,12 @@ export function CheckoutAndTrackerView({
               ) : (
                 <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 flex items-center gap-2 text-xs text-emerald-800">
                   <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  <span>Settled — ${bundle.finalCapturedTotal.toFixed(2)}</span>
+                  <span>
+                    Settled — ${bundle.finalCapturedTotal.toFixed(2)}
+                    {swappedCount > 0
+                      ? ` (${swappedCount} ${swappedCount === 1 ? 'seller' : 'sellers'} auto-swapped, saved $${bundle.savedOrVoidedAmount.toFixed(2)})`
+                      : ''}
+                  </span>
                 </div>
               )}
 

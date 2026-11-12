@@ -292,37 +292,39 @@ export async function executeTwoPhaseCommit(
     }
   }
 
-  for (const leg of bundle.legs) {
-    if (leg.status !== 'FAILED') continue;
-
-    if (!bundle.autoSubstitute) {
-      criticalFailureDetected = true;
-      continue;
-    }
-
-    const decision = await evaluateSubstituteRecovery({
-      failedLeg: leg,
-      remainingBudgetHeadroom: remainingHeadroom,
-      goalPrompt: bundle.goalPrompt,
+  const failedLegs = bundle.legs.filter((l) => l.status === 'FAILED');
+  if (failedLegs.length > 0 && !bundle.autoSubstitute) {
+    criticalFailureDetected = true;
+  } else if (failedLegs.length > 0) {
+    const decisions = await Promise.all(
+      failedLegs.map((leg) =>
+        evaluateSubstituteRecovery({
+          failedLeg: leg,
+          remainingBudgetHeadroom: remainingHeadroom,
+          goalPrompt: bundle.goalPrompt,
+        })
+      )
+    );
+    failedLegs.forEach((leg, idx) => {
+      const decision = decisions[idx];
+      if (decision.action === 'SUBSTITUTE' && decision.chosenSubstitute) {
+        const sub = decision.chosenSubstitute;
+        const previousTitle = leg.title;
+        const previousPrice = leg.unitPrice;
+        leg.substitutedFrom = `${previousTitle} (${leg.sellerName})`;
+        leg.sku = sub.sku;
+        leg.title = sub.title;
+        leg.sellerId = sub.sellerId;
+        leg.sellerName = sub.sellerName;
+        leg.currentLivePrice = sub.price;
+        leg.status = 'SUBSTITUTED';
+        leg.failureReason = decision.reasoning;
+        remainingHeadroom += (previousPrice - sub.price) * leg.quantity;
+      } else {
+        leg.failureReason = decision.reasoning;
+        criticalFailureDetected = true;
+      }
     });
-
-    if (decision.action === 'SUBSTITUTE' && decision.chosenSubstitute) {
-      const sub = decision.chosenSubstitute;
-      const previousTitle = leg.title;
-      const previousPrice = leg.unitPrice;
-      leg.substitutedFrom = `${previousTitle} (${leg.sellerName})`;
-      leg.sku = sub.sku;
-      leg.title = sub.title;
-      leg.sellerId = sub.sellerId;
-      leg.sellerName = sub.sellerName;
-      leg.currentLivePrice = sub.price;
-      leg.status = 'SUBSTITUTED';
-      leg.failureReason = decision.reasoning;
-      remainingHeadroom += (previousPrice - sub.price) * leg.quantity;
-    } else {
-      leg.failureReason = decision.reasoning;
-      criticalFailureDetected = true;
-    }
   }
 
   if (criticalFailureDetected) {

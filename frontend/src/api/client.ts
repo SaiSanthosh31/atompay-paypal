@@ -8,7 +8,7 @@ import type {
 
 async function apiJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(60_000),
     headers: {
       'Content-Type': 'application/json',
       ...(init?.headers || {}),
