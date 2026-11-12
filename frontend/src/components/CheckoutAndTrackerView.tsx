@@ -225,7 +225,7 @@ export function CheckoutAndTrackerView({
                         <option value="PRICE_SPIKE">
                           Simulate Price Spike (+28%)
                         </option>
-                        <option value="TIMEOUT">Simulate Seller Timeout</option>
+                        <option value="DELAYED">Simulate Seller Delay / Timeout</option>
                       </select>
                     </div>
                   )}

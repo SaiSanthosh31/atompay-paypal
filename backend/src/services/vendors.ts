@@ -267,7 +267,7 @@ export async function probeSellerLeg(
   const mode = getFaultMode(leg.id);
 
   // Brief realistic network probe delay
-  await new Promise((r) => setTimeout(r, mode === 'TIMEOUT' ? 450 : 120));
+  await new Promise((r) => setTimeout(r, mode === 'TIMEOUT' || mode === 'DELAYED' ? 450 : 120));
 
   if (mode === 'OUT_OF_STOCK') {
     return {
@@ -281,7 +281,7 @@ export async function probeSellerLeg(
     };
   }
 
-  if (mode === 'TIMEOUT') {
+  if (mode === 'TIMEOUT' || mode === 'DELAYED') {
     return {
       legId: leg.id,
       sellerName: leg.sellerName,
@@ -289,7 +289,7 @@ export async function probeSellerLeg(
       liveUnitPrice: leg.unitPrice,
       latencyMs: Date.now() - started,
       faultMode: mode,
-      reason: `${leg.sellerName} fulfillment API timed out (>5000ms) during 2PC Prepare.`,
+      reason: `${leg.sellerName} fulfillment API timed out (>5000ms delay) during 2PC Prepare phase.`,
     };
   }
 

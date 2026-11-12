@@ -10,7 +10,7 @@ import {
 export const vendorsRouter = Router();
 
 const faultSchema = z.object({
-  faultMode: z.enum(['IN_STOCK', 'OUT_OF_STOCK', 'PRICE_SPIKE', 'TIMEOUT']),
+  faultMode: z.enum(['IN_STOCK', 'OUT_OF_STOCK', 'PRICE_SPIKE', 'TIMEOUT', 'DELAYED']),
 });
 
 vendorsRouter.get('/scenarios', (_req, res) => {
