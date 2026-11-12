@@ -201,11 +201,7 @@ export function App() {
     try {
       setError(null);
       setIsBusy(true);
-      const { bundle: ordered } = await atomApi.createPayPalOrder(activeBundle.id);
-      const { bundle: authed } = await atomApi.authorizeOrderHold(
-        ordered.id,
-        ordered.paypalOrderId
-      );
+      const { bundle: authed } = await atomApi.simAuthorizeHold(activeBundle.id);
       setActiveBundle(authed);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Authorization failed');

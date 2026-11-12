@@ -211,6 +211,29 @@ export async function authorizeBundleHold(
   return bundle;
 }
 
+export async function simulateAuthorizationHold(
+  bundleId: string
+): Promise<BundleSession> {
+  const bundle = bundles.get(bundleId);
+  if (!bundle) throw new Error(`Bundle ${bundleId} not found`);
+
+  const simOrderId = `SIM_ORD_${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
+  const authRes = await authorizeOrder(simOrderId);
+  bundle.paypalOrderId = simOrderId;
+  bundle.paypalAuthorizationId = authRes.authorizationId;
+  bundle.phase = 'AUTHORIZED';
+  bundle.executionMode = 'SIMULATED_FALLBACK';
+  bundle.wireEvents.push(authRes.wireEvent);
+  bundle.legs = bundle.legs.map((l) => ({
+    ...l,
+    faultMode: getFaultMode(l.id),
+    status: 'AUTHORIZED',
+  }));
+  bundle.updatedAt = nowIso();
+  persist();
+  return bundle;
+}
+
 export async function executeTwoPhaseCommit(
   bundleId: string,
   options?: { autoSubstitute?: boolean }

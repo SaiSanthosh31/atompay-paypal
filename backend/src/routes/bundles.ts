@@ -8,6 +8,7 @@ import {
   getBundleById,
   getLedgerEntries,
   listBundles,
+  simulateAuthorizationHold,
 } from '../services/orchestrator.js';
 import { generateSmartCartFromGoal } from '../services/gemini.js';
 
@@ -93,6 +94,15 @@ bundlesRouter.post('/:id/authorize', async (req, res, next) => {
     const orderId =
       typeof req.body?.orderId === 'string' ? req.body.orderId : undefined;
     const bundle = await authorizeBundleHold(req.params.id, orderId);
+    res.json({ bundle });
+  } catch (err) {
+    next(err);
+  }
+});
+
+bundlesRouter.post('/:id/sim-authorize', async (req, res, next) => {
+  try {
+    const bundle = await simulateAuthorizationHold(req.params.id);
     res.json({ bundle });
   } catch (err) {
     next(err);

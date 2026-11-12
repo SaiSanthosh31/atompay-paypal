@@ -107,6 +107,12 @@ export const atomApi = {
       }
     ),
 
+  simAuthorizeHold: (bundleId: string) =>
+    apiJson<{ bundle: BundleSession }>(
+      `/api/bundles/${encodeURIComponent(bundleId)}/sim-authorize`,
+      { method: 'POST' }
+    ),
+
   executeTwoPhaseCommit: (bundleId: string, autoSubstitute: boolean) =>
     apiJson<{ bundle: BundleSession }>(
       `/api/bundles/${encodeURIComponent(bundleId)}/execute-2pc`,

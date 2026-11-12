@@ -2,7 +2,7 @@ import { Code2, Receipt, ShieldCheck, ShoppingBag } from 'lucide-react';
 
 export type AppTab = 'shop' | 'orders' | 'logs';
 
-export const APP_VERSION = 'v2.1';
+export const APP_VERSION = 'v2.2';
 
 interface TopBarProps {
   activeTab: AppTab;
