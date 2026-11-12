@@ -30,6 +30,7 @@ const bundles = new Map<string, BundleSession>(
   persisted.bundles.map((b) => [b.id, b])
 );
 const ledgerEntries: LedgerEntry[] = [...persisted.ledgerEntries];
+const inFlight2PC = new Set<string>();
 
 function persist(): void {
   savePersistedStore({
@@ -240,9 +241,22 @@ export async function executeTwoPhaseCommit(
 ): Promise<BundleSession> {
   const bundle = bundles.get(bundleId);
   if (!bundle) throw new Error(`Bundle ${bundleId} not found`);
+  if (
+    bundle.phase === 'COMMITTED' ||
+    bundle.phase === 'PARTIAL_COMMITTED' ||
+    bundle.phase === 'ROLLED_BACK'
+  ) {
+    return bundle;
+  }
+  if (inFlight2PC.has(bundleId)) {
+    throw new Error('Settlement already in progress for this bundle.');
+  }
   if (!bundle.paypalAuthorizationId) {
     throw new Error('PayPal Authorization Hold must be locked before running 2PC.');
   }
+
+  inFlight2PC.add(bundleId);
+  try {
 
   if (typeof options?.autoSubstitute === 'boolean') {
     bundle.autoSubstitute = options.autoSubstitute;
@@ -374,6 +388,9 @@ export async function executeTwoPhaseCommit(
   recordLedgerEntries(bundle);
   persist();
   return bundle;
+  } finally {
+    inFlight2PC.delete(bundleId);
+  }
 }
 
 function recordLedgerEntries(bundle: BundleSession): void {
