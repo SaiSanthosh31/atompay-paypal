@@ -22,9 +22,20 @@ import {
   probeSellerLeg,
   SCENARIO_PRESETS,
 } from './vendors.js';
+import { loadPersistedStore, savePersistedStore } from './store.js';
 
-const bundles = new Map<string, BundleSession>();
-const ledgerEntries: LedgerEntry[] = [];
+const persisted = loadPersistedStore();
+const bundles = new Map<string, BundleSession>(
+  persisted.bundles.map((b) => [b.id, b])
+);
+const ledgerEntries: LedgerEntry[] = [...persisted.ledgerEntries];
+
+function persist(): void {
+  savePersistedStore({
+    bundles: Array.from(bundles.values()).slice(-50),
+    ledgerEntries: ledgerEntries.slice(-200),
+  });
+}
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -145,6 +156,7 @@ export async function createAndAnalyzeBundle(input: {
   };
 
   bundles.set(bundleId, session);
+  persist();
   return session;
 }
 
@@ -166,6 +178,7 @@ export async function createPayPalOrderForBundle(
   bundle.phase = 'ORDER_CREATED';
   bundle.executionMode = result.wireEvent.mode;
   bundle.updatedAt = nowIso();
+  persist();
   return bundle;
 }
 
@@ -193,6 +206,7 @@ export async function authorizeBundleHold(
     status: 'AUTHORIZED',
   }));
   bundle.updatedAt = nowIso();
+  persist();
   return bundle;
 }
 
@@ -304,7 +318,9 @@ export async function executeTwoPhaseCommit(
   for (let i = 0; i < settleableLegs.length; i++) {
     const leg = settleableLegs[i];
     const isFinal = i === settleableLegs.length - 1;
-    const trancheUsd = Number((leg.currentLivePrice * leg.quantity).toFixed(2));
+    const rawTranche = Number((leg.currentLivePrice * leg.quantity).toFixed(2));
+    const maxRemaining = Number(Math.max(0, bundle.authorizedTotal - capturedSum).toFixed(2));
+    const trancheUsd = Math.min(rawTranche, maxRemaining);
 
     const capRes = await captureAuthorizationTranche({
       authorizationId: bundle.paypalAuthorizationId,
@@ -338,6 +354,7 @@ export async function executeTwoPhaseCommit(
   bundle.updatedAt = nowIso();
 
   recordLedgerEntries(bundle);
+  persist();
   return bundle;
 }
 
@@ -371,5 +388,6 @@ function recordLedgerEntries(bundle: BundleSession): void {
       timestamp: ts,
     });
   }
+  persist();
 }
 

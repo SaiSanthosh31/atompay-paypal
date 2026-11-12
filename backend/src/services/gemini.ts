@@ -27,6 +27,111 @@ export interface RecoveryDecision {
   reasoning: string;
 }
 
+export interface GeneratedCartItem {
+  title: string;
+  sellerName: string;
+  category: string;
+  unitPrice: number;
+  criticality: LegCriticality;
+}
+
+export async function generateSmartCartFromGoal(
+  goalPrompt: string
+): Promise<{ items: GeneratedCartItem[]; aiEngine: 'gemini' | 'heuristic_fallback' }> {
+  const client = getClient();
+  if (!client) {
+    return {
+      aiEngine: 'heuristic_fallback',
+      items: [
+        {
+          title: 'Shure MV7+ USB/XLR Podcast Mic',
+          sellerName: 'AudioForge Store',
+          category: 'Audio',
+          unitPrice: 145,
+          criticality: 'CRITICAL',
+        },
+        {
+          title: 'Elgato Wave Mic Arm LP',
+          sellerName: 'DeskCraft Supply',
+          category: 'Rigging',
+          unitPrice: 65,
+          criticality: 'CRITICAL',
+        },
+        {
+          title: 'Acoustic Foam Desk Pop Shield',
+          sellerName: 'StudioQuiet Co',
+          category: 'Accessory',
+          unitPrice: 24,
+          criticality: 'OPTIONAL',
+        },
+      ],
+    };
+  }
+
+  try {
+    const prompt = `Build a realistic multi-seller online shopping bundle for this buyer goal: "${goalPrompt}".
+Return 3 to 4 complementary products from DIFFERENT independent sellers (e.g. hardware, creator gear, software/cloud services, or event kit) with realistic prices under $400 total.
+Mark items that are useless without each other as "CRITICAL" and nice-to-have accessories as "OPTIONAL".
+
+Respond ONLY with valid JSON:
+{
+  "items": [
+    {
+      "title": "Specific product name",
+      "sellerName": "Independent store name",
+      "category": "Short category",
+      "unitPrice": 89.00,
+      "criticality": "CRITICAL"
+    }
+  ]
+}`;
+
+    const rawText = await generateWithTimeout(client, prompt, 0.3);
+    const cleaned = rawText.replace(/^```json\s*|\s*```$/g, '');
+    const parsed = JSON.parse(cleaned) as { items?: GeneratedCartItem[] };
+    if (!parsed.items || !Array.isArray(parsed.items) || parsed.items.length < 2) {
+      throw new Error('Invalid generated cart');
+    }
+
+    const sanitized: GeneratedCartItem[] = parsed.items.slice(0, 5).map((it) => ({
+      title: String(it.title || 'Bundle Item').slice(0, 100),
+      sellerName: String(it.sellerName || 'Partner Store').slice(0, 60),
+      category: String(it.category || 'General').slice(0, 40),
+      unitPrice: Math.max(5, Math.min(999, Number(it.unitPrice) || 49)),
+      criticality: it.criticality === 'OPTIONAL' ? 'OPTIONAL' : 'CRITICAL',
+    }));
+
+    return { items: sanitized, aiEngine: 'gemini' };
+  } catch {
+    return {
+      aiEngine: 'heuristic_fallback',
+      items: [
+        {
+          title: 'Primary Hardware Unit',
+          sellerName: 'ApexDirect Store',
+          category: 'Core',
+          unitPrice: 140,
+          criticality: 'CRITICAL',
+        },
+        {
+          title: 'Compatible Companion Module',
+          sellerName: 'LinkGear Depot',
+          category: 'Module',
+          unitPrice: 85,
+          criticality: 'CRITICAL',
+        },
+        {
+          title: 'Protective Carry Case',
+          sellerName: 'PackStudio',
+          category: 'Accessory',
+          unitPrice: 25,
+          criticality: 'OPTIONAL',
+        },
+      ],
+    };
+  }
+}
+
 function getClient(): GoogleGenAI | null {
   if (!isGeminiConfigured()) return null;
   return new GoogleGenAI({ apiKey: env.geminiApiKey });

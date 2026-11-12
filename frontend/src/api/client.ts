@@ -40,6 +40,21 @@ export const atomApi = {
   resetAllFaults: () =>
     apiJson<{ ok: boolean }>('/api/vendors/reset', { method: 'POST' }),
 
+  generateCart: (goal: string) =>
+    apiJson<{
+      items: Array<{
+        title: string;
+        sellerName: string;
+        category: string;
+        unitPrice: number;
+        criticality: 'CRITICAL' | 'OPTIONAL';
+      }>;
+      aiEngine: 'gemini' | 'heuristic_fallback';
+    }>('/api/bundles/generate-cart', {
+      method: 'POST',
+      body: JSON.stringify({ goal }),
+    }),
+
   analyzeBundle: (payload: {
     scenarioId?: string;
     customTitle?: string;

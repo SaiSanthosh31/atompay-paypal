@@ -28,6 +28,8 @@ interface MarketplaceViewProps {
   cart: CartItem[];
   onAddToCart: (item: CartItem) => void;
   onAddBundle: (scenario: ScenarioPreset) => void;
+  onGenerateSmartCart: (goal: string) => Promise<void>;
+  isGeneratingCart: boolean;
   onRemoveFromCart: (id: string) => void;
   onToggleCriticality: (id: string) => void;
   autoSubstitute: boolean;
@@ -41,6 +43,8 @@ export function MarketplaceView({
   cart,
   onAddToCart,
   onAddBundle,
+  onGenerateSmartCart,
+  isGeneratingCart,
   onRemoveFromCart,
   onToggleCriticality,
   autoSubstitute,
@@ -49,6 +53,7 @@ export function MarketplaceView({
   isCheckingOut,
 }: MarketplaceViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [smartGoal, setSmartGoal] = useState('');
   const [showCustomForm, setShowCustomForm] = useState<boolean>(false);
   const [customTitle, setCustomTitle] = useState('');
   const [customSeller, setCustomSeller] = useState('');
@@ -104,23 +109,49 @@ export function MarketplaceView({
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
       {/* Left: Multi-Seller Storefront */}
       <div className="lg:col-span-8 space-y-5">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-bold text-slate-900">
-              Shop Across Independent Sellers — Protected in One Checkout
-            </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Add items from multiple stores or add your own items. Your PayPal hold only settles if every required seller confirms stock and price.
-            </p>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-lg font-bold text-slate-900">
+                Shop Across Independent Sellers — Protected in One Checkout
+              </h1>
+              <p className="text-xs text-slate-500 mt-1">
+                Add items from multiple stores, generate a bundle from a goal, or add custom items. Your PayPal hold only settles if every required seller confirms.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCustomForm((v) => !v)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 cursor-pointer transition"
+            >
+              <PackagePlus className="h-4 w-4 text-[#0070BA]" />
+              Add Custom Seller Item
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowCustomForm((v) => !v)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-800 cursor-pointer transition"
+
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!smartGoal.trim() || isGeneratingCart) return;
+              await onGenerateSmartCart(smartGoal.trim());
+            }}
+            className="flex flex-col sm:flex-row gap-2"
           >
-            <PackagePlus className="h-4 w-4 text-[#0070BA]" />
-            Add Custom Seller Item
-          </button>
+            <input
+              type="text"
+              value={smartGoal}
+              onChange={(e) => setSmartGoal(e.target.value)}
+              placeholder="Or describe what you're buying (e.g., 'Podcast mic, boom arm & desk shield under $260 across stores')..."
+              className="flex-1 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-[#0070BA]"
+            />
+            <button
+              type="submit"
+              disabled={isGeneratingCart || !smartGoal.trim()}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white text-xs font-semibold cursor-pointer transition shrink-0"
+            >
+              {isGeneratingCart ? 'Building Bundle...' : 'Build Bundle'}
+            </button>
+          </form>
         </div>
 
         {showCustomForm && (

@@ -9,6 +9,7 @@ import {
   getLedgerEntries,
   listBundles,
 } from '../services/orchestrator.js';
+import { generateSmartCartFromGoal } from '../services/gemini.js';
 
 export const bundlesRouter = Router();
 
@@ -47,6 +48,21 @@ bundlesRouter.get('/:id', (req, res) => {
     return;
   }
   res.json({ bundle });
+});
+
+bundlesRouter.post('/generate-cart', async (req, res, next) => {
+  try {
+    const goal =
+      typeof req.body?.goal === 'string' ? req.body.goal.trim() : '';
+    if (!goal) {
+      res.status(400).json({ error: 'goal string is required' });
+      return;
+    }
+    const result = await generateSmartCartFromGoal(goal);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
 });
 
 bundlesRouter.post('/analyze', async (req, res, next) => {
