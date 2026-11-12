@@ -22,6 +22,7 @@ import {
   probeSellerLeg,
   SCENARIO_PRESETS,
 } from './vendors.js';
+import pLimit from 'p-limit';
 
 const bundles = new Map<string, BundleSession>();
 const ledgerEntries: LedgerEntry[] = [];
@@ -213,10 +214,11 @@ export async function executeTwoPhaseCommit(
   bundle.phase = 'PROBING';
   bundle.updatedAt = nowIso();
 
-  // Phase 2: Concurrently probe every seller leg
-  const probeResults = await Promise.all(
-    bundle.legs.map((leg) => probeSellerLeg(leg))
-  );
+  // Phase 2: Concurrently probe every seller leg with limited concurrency
+  const limit = pLimit(5);
+  const probePromises = bundle.legs.map((leg) => limit(() => probeSellerLeg(leg)));
+  const probeResults = await Promise.all(probePromises);
+
 
   let remainingHeadroom = 0;
   let criticalFailureDetected = false;
