@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { atomApi } from './api/client';
-import { DagVisualizer } from './components/DagVisualizer';
+import { CheckoutAndTrackerView } from './components/CheckoutAndTrackerView';
 import { LedgerGrid } from './components/LedgerGrid';
-import { ScenarioBuilder } from './components/ScenarioBuilder';
-import { TopBar } from './components/TopBar';
+import { type CartItem, MarketplaceView } from './components/MarketplaceView';
+import { type AppTab, TopBar } from './components/TopBar';
 import { WireInspector } from './components/WireInspector';
 import type {
   BundleSession,
@@ -16,13 +16,12 @@ import type {
 export function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [scenarios, setScenarios] = useState<ScenarioPreset[]>([]);
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string>('');
-  const [goalPrompt, setGoalPrompt] = useState<string>('');
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [autoSubstitute, setAutoSubstitute] = useState<boolean>(true);
-  const [bundle, setBundle] = useState<BundleSession | null>(null);
+  const [activeBundle, setActiveBundle] = useState<BundleSession | null>(null);
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<'control' | 'ledger'>('control');
-  const [isCompiling, setIsCompiling] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<AppTab>('shop');
+  const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
   const [isBusy, setIsBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +30,7 @@ export function App() {
       const { entries } = await atomApi.getLedger();
       setLedger(entries);
     } catch {
-      // Non-fatal on initial boot
+      // Non-fatal on boot
     }
   }, []);
 
@@ -49,27 +48,106 @@ export function App() {
           loadScenarios(),
         ]);
         setHealth(h);
-        if (sc.length > 0) {
-          setSelectedScenarioId(sc[0].id);
-          setGoalPrompt(sc[0].goalPrompt);
-          const { bundle: initial } = await atomApi.analyzeBundle({
-            scenarioId: sc[0].id,
-            goalPrompt: sc[0].goalPrompt,
-            autoSubstitute: true,
-          });
-          setBundle(initial);
+        if (sc.length > 0 && cart.length === 0) {
+          setCart(
+            sc[0].items.map((item) => ({
+              id: item.id,
+              presetScenarioId: sc[0].id,
+              sku: item.sku,
+              title: item.title,
+              sellerName: item.sellerName,
+              category: item.category,
+              unitPrice: item.unitPrice,
+              quantity: item.quantity,
+              criticality: item.criticality,
+            }))
+          );
         }
         await loadLedger();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to initialize AtomPay');
+        setError(e instanceof Error ? e.message : 'Failed to load storefront');
       }
     })();
-  }, [loadLedger, loadScenarios]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleSelectScenario = (id: string) => {
-    setSelectedScenarioId(id);
-    const match = scenarios.find((s) => s.id === id);
-    if (match) setGoalPrompt(match.goalPrompt);
+  const handleAddToCart = (item: CartItem) => {
+    setCart((prev) => (prev.some((p) => p.id === item.id) ? prev : [...prev, item]));
+  };
+
+  const handleAddBundle = (scenario: ScenarioPreset) => {
+    setCart(
+      scenario.items.map((item) => ({
+        id: item.id,
+        presetScenarioId: scenario.id,
+        sku: item.sku,
+        title: item.title,
+        sellerName: item.sellerName,
+        category: item.category,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        criticality: item.criticality,
+      }))
+    );
+  };
+
+  const handleRemoveFromCart = (id: string) => {
+    setCart((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleToggleCriticality = (id: string) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              criticality:
+                item.criticality === 'CRITICAL' ? 'OPTIONAL' : 'CRITICAL',
+            }
+          : item
+      )
+    );
+  };
+
+  const handleProceedToCheckout = async () => {
+    if (cart.length === 0) return;
+    try {
+      setError(null);
+      setIsCheckingOut(true);
+
+      const matchingPreset = scenarios.find(
+        (sc) =>
+          sc.items.length === cart.length &&
+          sc.items.every((si) => cart.some((ci) => ci.id === si.id))
+      );
+
+      const { bundle } = await atomApi.analyzeBundle(
+        matchingPreset
+          ? {
+              scenarioId: matchingPreset.id,
+              autoSubstitute,
+            }
+          : {
+              customTitle: 'Custom Multi-Seller Order',
+              autoSubstitute,
+              customLegs: cart.map((c) => ({
+                id: c.id,
+                title: c.title,
+                sellerName: c.sellerName,
+                category: c.category,
+                unitPrice: c.unitPrice,
+                quantity: c.quantity,
+                criticality: c.criticality,
+              })),
+            }
+      );
+
+      setActiveBundle(bundle);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not prepare checkout');
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const handleSetFault = async (legId: string, mode: VendorFaultMode) => {
@@ -77,57 +155,30 @@ export function App() {
       setError(null);
       await atomApi.setVendorFault(legId, mode);
       await loadScenarios();
+      if (activeBundle) {
+        setActiveBundle({
+          ...activeBundle,
+          legs: activeBundle.legs.map((l) =>
+            l.id === legId ? { ...l, faultMode: mode } : l
+          ),
+        });
+      }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update seller fault');
+      setError(e instanceof Error ? e.message : 'Failed to update seller status');
     }
   };
 
-  const handleResetFaults = async () => {
-    try {
-      setError(null);
-      await atomApi.resetAllFaults();
-      await loadScenarios();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to reset faults');
-    }
-  };
-
-  const handleCompileBundle = async () => {
-    try {
-      setError(null);
-      setIsCompiling(true);
-      const { bundle: compiled } = await atomApi.analyzeBundle({
-        scenarioId: selectedScenarioId,
-        goalPrompt,
-        autoSubstitute,
-      });
-      setBundle(compiled);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to compile bundle');
-    } finally {
-      setIsCompiling(false);
-    }
-  };
-
-  const handleSimAuth = async () => {
-    if (!bundle) return;
+  const handleSimAuthorize = async () => {
+    if (!activeBundle) return;
     try {
       setError(null);
       setIsBusy(true);
-      if (
-        bundle.phase === 'COMMITTED' ||
-        bundle.phase === 'PARTIAL_COMMITTED' ||
-        bundle.phase === 'ROLLED_BACK'
-      ) {
-        await handleCompileBundle();
-        return;
-      }
-      const { bundle: ordered } = await atomApi.createPayPalOrder(bundle.id);
+      const { bundle: ordered } = await atomApi.createPayPalOrder(activeBundle.id);
       const { bundle: authed } = await atomApi.authorizeOrderHold(
         ordered.id,
         ordered.paypalOrderId
       );
-      setBundle(authed);
+      setActiveBundle(authed);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Authorization failed');
     } finally {
@@ -137,8 +188,8 @@ export function App() {
 
   const handleBackendCreateOrder = async (bundleId: string): Promise<string> => {
     setError(null);
-    const { orderId, bundle: updated } = await atomApi.createPayPalOrder(bundleId);
-    setBundle(updated);
+    const { orderId, bundle } = await atomApi.createPayPalOrder(bundleId);
+    setActiveBundle(bundle);
     return orderId;
   };
 
@@ -147,92 +198,92 @@ export function App() {
     orderId: string
   ): Promise<void> => {
     setError(null);
-    const { bundle: updated } = await atomApi.authorizeOrderHold(
-      bundleId,
-      orderId
-    );
-    setBundle(updated);
+    const { bundle } = await atomApi.authorizeOrderHold(bundleId, orderId);
+    setActiveBundle(bundle);
   };
 
-  const handleExecute2PC = async () => {
-    if (!bundle) return;
+  const handleExecuteSettlement = async () => {
+    if (!activeBundle) return;
     try {
       setError(null);
       setIsBusy(true);
       const { bundle: settled } = await atomApi.executeTwoPhaseCommit(
-        bundle.id,
+        activeBundle.id,
         autoSubstitute
       );
-      setBundle(settled);
+      setActiveBundle(settled);
       await loadLedger();
     } catch (e) {
-      setError(e instanceof Error ? e.message : '2PC execution failed');
+      setError(e instanceof Error ? e.message : 'Settlement failed');
     } finally {
       setIsBusy(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#070B14] text-slate-100">
+    <div className="min-h-screen bg-[#F6F7F9] text-slate-900">
       <TopBar
-        health={health}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'shop') setActiveBundle(null);
+        }}
+        cartCount={cart.length}
         ledgerCount={ledger.length}
+        wireCount={activeBundle?.wireEvents.length || 0}
       />
 
-      <main className="max-w-[1480px] mx-auto px-4 sm:px-6 py-5 space-y-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         {error && (
-          <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-2.5 text-xs text-rose-200 flex items-center justify-between gap-2">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-800 flex items-center justify-between gap-2">
             <span>{error}</span>
             <button
               type="button"
               onClick={() => setError(null)}
-              className="text-rose-300 hover:text-white font-semibold cursor-pointer"
+              className="font-semibold text-rose-900 cursor-pointer"
             >
               Dismiss
             </button>
           </div>
         )}
 
-        {activeTab === 'control' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            <div className="lg:col-span-3">
-              <ScenarioBuilder
-                scenarios={scenarios}
-                selectedScenarioId={selectedScenarioId}
-                onSelectScenario={handleSelectScenario}
-                goalPrompt={goalPrompt}
-                onGoalPromptChange={setGoalPrompt}
-                autoSubstitute={autoSubstitute}
-                onToggleAutoSubstitute={setAutoSubstitute}
-                onSetFault={handleSetFault}
-                onResetFaults={handleResetFaults}
-                onCompileBundle={handleCompileBundle}
-                isCompiling={isCompiling}
-              />
-            </div>
+        {activeTab === 'shop' && !activeBundle && (
+          <MarketplaceView
+            scenarios={scenarios}
+            cart={cart}
+            onAddToCart={handleAddToCart}
+            onAddBundle={handleAddBundle}
+            onRemoveFromCart={handleRemoveFromCart}
+            onToggleCriticality={handleToggleCriticality}
+            autoSubstitute={autoSubstitute}
+            onToggleAutoSubstitute={setAutoSubstitute}
+            onProceedToCheckout={handleProceedToCheckout}
+            isCheckingOut={isCheckingOut}
+          />
+        )}
 
-            <div className="lg:col-span-5">
-              <DagVisualizer
-                bundle={bundle}
-                health={health}
-                autoSubstitute={autoSubstitute}
-                isBusy={isBusy}
-                onCreateOrderAndSimAuth={handleSimAuth}
-                onBackendCreateOrder={handleBackendCreateOrder}
-                onBackendAuthorizeOrder={handleBackendAuthorizeOrder}
-                onExecute2PC={handleExecute2PC}
-                onError={setError}
-              />
-            </div>
+        {activeTab === 'shop' && activeBundle && (
+          <CheckoutAndTrackerView
+            bundle={activeBundle}
+            health={health}
+            autoSubstitute={autoSubstitute}
+            isBusy={isBusy}
+            onBackToShop={() => setActiveBundle(null)}
+            onSetFault={handleSetFault}
+            onSimAuthorize={handleSimAuthorize}
+            onBackendCreateOrder={handleBackendCreateOrder}
+            onBackendAuthorizeOrder={handleBackendAuthorizeOrder}
+            onExecuteSettlement={handleExecuteSettlement}
+            onError={setError}
+          />
+        )}
 
-            <div className="lg:col-span-4">
-              <WireInspector events={bundle?.wireEvents || []} />
-            </div>
-          </div>
-        ) : (
+        {activeTab === 'orders' && (
           <LedgerGrid entries={ledger} onRefresh={loadLedger} />
+        )}
+
+        {activeTab === 'logs' && (
+          <WireInspector events={activeBundle?.wireEvents || []} />
         )}
       </main>
     </div>
@@ -240,4 +291,3 @@ export function App() {
 }
 
 export default App;
-

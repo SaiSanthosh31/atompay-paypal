@@ -20,6 +20,7 @@ const analyzeSchema = z.object({
   customLegs: z
     .array(
       z.object({
+        id: z.string().optional(),
         title: z.string().min(1),
         sellerName: z.string().min(1),
         category: z.string().optional(),

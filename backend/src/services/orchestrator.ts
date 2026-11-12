@@ -48,6 +48,7 @@ export async function createAndAnalyzeBundle(input: {
   goalPrompt?: string;
   autoSubstitute?: boolean;
   customLegs?: Array<{
+    id?: string;
     title: string;
     sellerName: string;
     category?: string;
@@ -61,6 +62,10 @@ export async function createAndAnalyzeBundle(input: {
     SCENARIO_PRESETS.find((s) => s.id === input.scenarioId) ||
     SCENARIO_PRESETS[0];
 
+  const catalogById = new Map(
+    SCENARIO_PRESETS.flatMap((s) => s.items.map((it) => [it.id, it]))
+  );
+
   let legs: VendorLeg[];
   let title: string;
   let goalPrompt: string;
@@ -70,27 +75,31 @@ export async function createAndAnalyzeBundle(input: {
     goalPrompt =
       input.goalPrompt ||
       `Purchase compatible items together: ${input.customLegs.map((l) => l.title).join(', ')}`;
-    legs = input.customLegs.map((item, idx) => ({
-      id: `custom-${idx + 1}`,
-      sku: `CUSTOM-${idx + 1}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
-      title: item.title,
-      sellerId: `seller_custom_${idx + 1}`,
-      sellerName: item.sellerName,
-      category: item.category || 'General',
-      unitPrice: Number(item.unitPrice),
-      currentLivePrice: Number(item.unitPrice),
-      quantity: item.quantity || 1,
-      criticality: item.criticality || 'CRITICAL',
-      dependsOn: idx > 0 ? ['custom-1'] : [],
-      dependencyReason:
-        idx > 0
-          ? 'Depends on primary item compatibility'
-          : 'Primary anchor item',
-      maxTolerancePct: 10,
-      faultMode: getFaultMode(`custom-${idx + 1}`),
-      status: 'PENDING',
-      substitutes: [],
-    }));
+    legs = input.customLegs.map((item, idx) => {
+      const known = item.id ? catalogById.get(item.id) : undefined;
+      const legId = item.id || `custom-${idx + 1}`;
+      return {
+        id: legId,
+        sku:
+          known?.sku ||
+          `CUSTOM-${idx + 1}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
+        title: item.title,
+        sellerId: known?.sellerId || `seller_custom_${idx + 1}`,
+        sellerName: item.sellerName,
+        category: item.category || known?.category || 'General',
+        unitPrice: Number(item.unitPrice),
+        currentLivePrice: Number(item.unitPrice),
+        quantity: item.quantity || 1,
+        criticality: item.criticality || known?.criticality || 'CRITICAL',
+        dependsOn: known?.dependsOn || [],
+        dependencyReason:
+          known?.dependencyReason || 'Linked to multi-seller checkout bundle',
+        maxTolerancePct: known?.maxTolerancePct ?? 10,
+        faultMode: getFaultMode(legId),
+        status: 'PENDING',
+        substitutes: known?.substitutes.map((s) => ({ ...s })) || [],
+      };
+    });
   } else {
     title = preset.name;
     goalPrompt = input.goalPrompt || preset.goalPrompt;
