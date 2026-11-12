@@ -7,7 +7,6 @@ import {
   Clock,
   Download,
   FileSpreadsheet,
-  Filter,
   Layers,
   RefreshCw,
   Search,
@@ -484,16 +483,6 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
             animateRows
             rowSelection="single"
           />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1 px-1">
-          <span className="flex items-center gap-1.5">
-            <Filter className="h-3 w-3 text-[#0070BA]" />
-            Live filter active: search across seller names, PayPal IDs, item SKUs, and AI notes.
-          </span>
-          <span className="font-mono text-slate-500">
-            Powered by AG Grid Community v33
-          </span>
         </div>
       </div>
     </div>
