@@ -527,7 +527,6 @@ export async function createSettlementInvoice(
 
   const data = (await res.json()) as { id?: string; status?: string; message?: string };
   if (!res.ok || !data.id) {
-    // Non-fatal if sandbox app doesn't have Invoicing toggle enabled
     return {
       invoiceId: `UNAVAILABLE_${res.status}`,
       status: 'SKIPPED',

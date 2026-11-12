@@ -227,7 +227,6 @@ export async function executeTwoPhaseCommit(
   bundle.phase = 'PROBING';
   bundle.updatedAt = nowIso();
 
-  // Phase 2: Concurrently probe every seller leg
   const probeResults = await Promise.all(
     bundle.legs.map((leg) => probeSellerLeg(leg))
   );
@@ -235,7 +234,6 @@ export async function executeTwoPhaseCommit(
   let remainingHeadroom = 0;
   let criticalFailureDetected = false;
 
-  // First pass: mark verified vs failed & check optional drops
   for (const leg of bundle.legs) {
     const probe = probeResults.find((p) => p.legId === leg.id)!;
     leg.faultMode = probe.faultMode;
@@ -256,7 +254,6 @@ export async function executeTwoPhaseCommit(
     }
   }
 
-  // Second pass: AI Substitution Recovery on failed CRITICAL legs (if enabled)
   for (const leg of bundle.legs) {
     if (leg.status !== 'FAILED') continue;
 
@@ -290,7 +287,6 @@ export async function executeTwoPhaseCommit(
     }
   }
 
-  // Phase 3A: Atomic Rollback (VOID entire PayPal Authorization Hold)
   if (criticalFailureDetected) {
     const voidRes = await voidAuthorizationHold(bundle.paypalAuthorizationId);
     bundle.wireEvents.push(voidRes.wireEvent);
@@ -309,7 +305,6 @@ export async function executeTwoPhaseCommit(
     return bundle;
   }
 
-  // Phase 3B: Atomic Multi-Tranche Capture (settled legs sequentially with final_capture=true on last)
   const settleableLegs = bundle.legs.filter(
     (l) => l.status === 'VERIFIED' || l.status === 'SUBSTITUTED'
   );
@@ -336,7 +331,6 @@ export async function executeTwoPhaseCommit(
     capturedSum += trancheUsd;
   }
 
-  // Generate PayPal Invoicing v2 itemized receipt
   const invRes = await createSettlementInvoice(
     bundle.id,
     bundle.title,

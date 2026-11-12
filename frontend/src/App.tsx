@@ -31,7 +31,6 @@ export function App() {
       const { entries } = await atomApi.getLedger();
       setLedger(entries);
     } catch {
-      // Non-fatal on boot
     }
   }, []);
 
@@ -69,7 +68,6 @@ export function App() {
         setError(e instanceof Error ? e.message : 'Failed to load storefront');
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAddToCart = (item: CartItem) => {

@@ -214,7 +214,6 @@ export const SCENARIO_PRESETS: ScenarioPreset[] = [
   },
 ];
 
-// Mutable fault registry keyed by legId so live demo can toggle seller failures in real time
 const faultRegistry = new Map<string, VendorFaultMode>();
 
 export function getFaultMode(legId: string): VendorFaultMode {
@@ -266,7 +265,6 @@ export async function probeSellerLeg(
   const started = Date.now();
   const mode = getFaultMode(leg.id);
 
-  // Brief realistic network probe delay
   await new Promise((r) => setTimeout(r, mode === 'TIMEOUT' || mode === 'DELAYED' ? 450 : 120));
 
   if (mode === 'OUT_OF_STOCK') {

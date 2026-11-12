@@ -107,7 +107,6 @@ export function MarketplaceView({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      {/* Left: Multi-Seller Storefront */}
       <div className="lg:col-span-8 space-y-5">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -221,7 +220,6 @@ export function MarketplaceView({
           </form>
         )}
 
-        {/* Quick Compatible Bundles */}
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -263,7 +261,6 @@ export function MarketplaceView({
           </div>
         </div>
 
-        {/* Category Filter + Product Catalog */}
         <div className="space-y-3">
           <div className="flex items-center gap-1.5 flex-wrap">
             {categories.map((cat) => (
@@ -352,7 +349,6 @@ export function MarketplaceView({
         </div>
       </div>
 
-      {/* Right: Protected Multi-Seller Cart */}
       <aside className="lg:col-span-4 bg-white border border-slate-200 rounded-2xl p-5 space-y-4 sticky top-20">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">

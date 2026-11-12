@@ -24,7 +24,6 @@ app.use('/api/health', healthRouter);
 app.use('/api/vendors', vendorsRouter);
 app.use('/api/bundles', bundlesRouter);
 
-// Serve built frontend in production (e.g., Render deploy)
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {

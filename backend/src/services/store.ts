@@ -37,7 +37,6 @@ export function savePersistedStore(data: PersistedData): void {
     }
     fs.writeFileSync(storePath, JSON.stringify(data, null, 2), 'utf8');
   } catch {
-    // Non-fatal if read-only filesystem
   }
 }
 
