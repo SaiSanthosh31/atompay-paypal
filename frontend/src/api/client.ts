@@ -46,6 +46,7 @@ export const atomApi = {
     goalPrompt?: string;
     autoSubstitute?: boolean;
     customLegs?: Array<{
+      id?: string;
       title: string;
       sellerName: string;
       category?: string;

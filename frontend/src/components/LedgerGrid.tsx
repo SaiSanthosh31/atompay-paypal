@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { AllCommunityModule, ModuleRegistry, colorSchemeDarkBlue, themeQuartz } from 'ag-grid-community';
+import { AllCommunityModule, ModuleRegistry, themeQuartz } from 'ag-grid-community';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import { AgGridReact } from 'ag-grid-react';
 import {
-  ArrowDownToLine,
   CheckCircle2,
   Clock,
   Download,
@@ -21,8 +20,6 @@ import type { LedgerEntry } from '../types/atompay';
 // Register AG Grid Community modules
 ModuleRegistry.registerModules([AllCommunityModule]);
 
-const darkTheme = themeQuartz.withPart(colorSchemeDarkBlue);
-
 interface LedgerGridProps {
   entries: LedgerEntry[];
   onRefresh: () => void;
@@ -33,8 +30,14 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
 
   // Financial KPI totals computed across all ledger entries
   const metrics = useMemo(() => {
-    const totalHolds = entries.reduce((s, e) => s + (e.authorizedAmount || 0), 0);
-    const totalCaptured = entries.reduce((s, e) => s + (e.settledAmount || 0), 0);
+    const totalHolds = entries.reduce(
+      (s, e) => s + (e.authorizedAmount || 0),
+      0
+    );
+    const totalCaptured = entries.reduce(
+      (s, e) => s + (e.settledAmount || 0),
+      0
+    );
     const voidedEntries = entries.filter(
       (e) => e.finalStatus === 'VOIDED' || e.finalStatus === 'FAILED'
     );
@@ -42,7 +45,9 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
       (s, e) => s + (e.authorizedAmount || 0),
       0
     );
-    const substitutedCount = entries.filter((e) => e.finalStatus === 'SUBSTITUTED').length;
+    const substitutedCount = entries.filter(
+      (e) => e.finalStatus === 'SUBSTITUTED'
+    ).length;
 
     return {
       totalHolds,
@@ -57,12 +62,12 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
     () => [
       {
         field: 'bundleId',
-        headerName: 'Bundle ID',
-        width: 120,
+        headerName: 'Order Ref',
+        width: 125,
         filter: true,
         pinned: 'left',
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => (
-          <span className="font-mono text-xs font-semibold text-cyan-300">
+          <span className="font-mono text-xs font-semibold text-[#003087]">
             {p.value}
           </span>
         ),
@@ -73,7 +78,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
         width: 175,
         filter: true,
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => (
-          <span className="font-mono text-xs text-slate-300 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
+          <span className="font-mono text-xs text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
             {p.value || 'N/A'}
           </span>
         ),
@@ -84,34 +89,34 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
         width: 175,
         filter: true,
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => (
-          <span className="font-mono text-xs text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+          <span className="font-mono text-xs text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
             {p.value || 'N/A'}
           </span>
         ),
       },
       {
         field: 'paypalCaptureId',
-        headerName: 'Capture / Action ID',
+        headerName: 'Capture / Void ID',
         width: 165,
         filter: true,
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => {
           const val = p.value || 'N/A';
           if (val === 'VOIDED') {
             return (
-              <span className="font-mono text-[11px] font-bold text-rose-300 bg-rose-500/15 px-2 py-0.5 rounded border border-rose-500/30">
+              <span className="font-mono text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                 VOIDED
               </span>
             );
           }
           if (val === 'SKIPPED') {
             return (
-              <span className="font-mono text-[11px] text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700">
+              <span className="font-mono text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                 SKIPPED
               </span>
             );
           }
           return (
-            <span className="font-mono text-xs text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            <span className="font-mono text-xs text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               {val}
             </span>
           );
@@ -123,17 +128,17 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
         width: 160,
         filter: true,
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => (
-          <span className="font-medium text-slate-200">{p.value}</span>
+          <span className="font-semibold text-slate-800">{p.value}</span>
         ),
       },
       {
         field: 'itemTitle',
-        headerName: 'Item / Sku',
+        headerName: 'Item / SKU',
         flex: 1.2,
         minWidth: 210,
         filter: true,
         cellRenderer: (p: ICellRendererParams<LedgerEntry>) => (
-          <span className="text-slate-100 font-normal">{p.value}</span>
+          <span className="text-slate-800">{p.value}</span>
         ),
       },
       {
@@ -147,8 +152,8 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
             <span
               className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                 isCritical
-                  ? 'text-rose-300 bg-rose-500/10 border-rose-500/30'
-                  : 'text-sky-300 bg-sky-500/10 border-sky-500/30'
+                  ? 'text-rose-700 bg-rose-50 border-rose-200'
+                  : 'text-sky-700 bg-sky-50 border-sky-200'
               }`}
             >
               {p.value}
@@ -162,15 +167,15 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
         width: 110,
         filter: 'agNumberColumnFilter',
         valueFormatter: (p) => `$${Number(p.value || 0).toFixed(2)}`,
-        cellClass: 'font-mono text-slate-300',
+        cellClass: 'font-mono text-slate-600',
       },
       {
         field: 'settledAmount',
-        headerName: 'Captured ($)',
+        headerName: 'Charged ($)',
         width: 120,
         filter: 'agNumberColumnFilter',
         valueFormatter: (p) => `$${Number(p.value || 0).toFixed(2)}`,
-        cellClass: 'font-mono text-emerald-300 font-semibold',
+        cellClass: 'font-mono text-emerald-700 font-bold',
       },
       {
         field: 'finalStatus',
@@ -181,7 +186,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           const s = p.value;
           if (s === 'CAPTURED') {
             return (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-emerald-300 bg-emerald-500/15 border border-emerald-500/30">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-emerald-700 bg-emerald-50 border border-emerald-200">
                 <CheckCircle2 className="h-3 w-3" />
                 CAPTURED
               </span>
@@ -189,7 +194,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           }
           if (s === 'VOIDED') {
             return (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-rose-300 bg-rose-500/15 border border-rose-500/30">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-rose-700 bg-rose-50 border border-rose-200">
                 <ShieldAlert className="h-3 w-3" />
                 VOIDED
               </span>
@@ -197,7 +202,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           }
           if (s === 'SUBSTITUTED') {
             return (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-indigo-300 bg-indigo-500/15 border border-indigo-500/30">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-indigo-700 bg-indigo-50 border border-indigo-200">
                 <Sparkles className="h-3 w-3" />
                 SUBSTITUTED
               </span>
@@ -205,7 +210,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           }
           if (s === 'AUTHORIZED') {
             return (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-sky-300 bg-sky-500/15 border border-sky-500/30">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-blue-700 bg-blue-50 border border-blue-200">
                 <Clock className="h-3 w-3" />
                 AUTHORIZED
               </span>
@@ -213,13 +218,13 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           }
           if (s === 'SKIPPED') {
             return (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-slate-400 bg-slate-800 border border-slate-700">
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-slate-600 bg-slate-100 border border-slate-200">
                 SKIPPED
               </span>
             );
           }
           return (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-amber-300 bg-amber-500/15 border border-amber-500/30">
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full text-amber-700 bg-amber-50 border border-amber-200">
               {s}
             </span>
           );
@@ -238,7 +243,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
             return String(p.value);
           }
         },
-        cellClass: 'text-[11px] font-mono text-slate-400',
+        cellClass: 'text-[11px] font-mono text-slate-500',
       },
       {
         field: 'decisionNote',
@@ -252,7 +257,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           return (
             <span
               className={`text-xs ${
-                isSwap ? 'text-indigo-300 font-medium' : 'text-slate-300'
+                isSwap ? 'text-indigo-700 font-semibold' : 'text-slate-600'
               }`}
               title={val}
             >
@@ -280,7 +285,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
   const handleExportCsv = () => {
     if (entries.length === 0) return;
     const headers = [
-      'Bundle ID',
+      'Order Ref',
       'Bundle Title',
       'PayPal Order ID',
       'PayPal Authorization ID',
@@ -289,7 +294,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
       'Item Title',
       'Criticality',
       'Authorized Hold (USD)',
-      'Settled Amount (USD)',
+      'Charged Amount (USD)',
       'Final Tranche Status',
       'Execution Mode',
       'Timestamp',
@@ -329,47 +334,47 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
     <div className="space-y-4">
       {/* Metric Cards Banner */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-slate-800 bg-[#0D1424] p-3.5 space-y-1">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Total Auth Holds</span>
-            <Layers className="h-4 w-4 text-blue-400" />
+            <Layers className="h-4 w-4 text-blue-600" />
           </div>
-          <div className="text-xl font-bold font-mono text-white">
+          <div className="text-2xl font-bold font-mono text-slate-900">
             ${metrics.totalHolds.toFixed(2)}
           </div>
           <p className="text-[11px] text-slate-500">Locked via PayPal Orders v2</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-[#0D1424] p-3.5 space-y-1">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Settled &amp; Captured</span>
-            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Settled &amp; Charged</span>
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
-          <div className="text-xl font-bold font-mono text-emerald-400">
+          <div className="text-2xl font-bold font-mono text-emerald-700">
             ${metrics.totalCaptured.toFixed(2)}
           </div>
           <p className="text-[11px] text-slate-500">Atomic Multi-Tranche Captures</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-[#0D1424] p-3.5 space-y-1">
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Voided / Protected</span>
-            <ShieldCheck className="h-4 w-4 text-rose-400" />
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Protected &amp; Voided</span>
+            <ShieldCheck className="h-4 w-4 text-rose-600" />
           </div>
-          <div className="text-xl font-bold font-mono text-rose-400">
+          <div className="text-2xl font-bold font-mono text-rose-700">
             ${metrics.totalProtected.toFixed(2)}
           </div>
-          <p className="text-[11px] text-slate-500">Protected by 2PC Atomic VOID</p>
+          <p className="text-[11px] text-slate-500">Saved by 2PC Atomic VOID</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-[#0D1424] p-3.5 space-y-1">
-          <div className="flex items-center justify-between text-xs text-slate-400">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+          <div className="flex items-center justify-between text-xs text-slate-500">
             <span>AI Swaps &amp; Audits</span>
-            <Sparkles className="h-4 w-4 text-indigo-400" />
+            <Sparkles className="h-4 w-4 text-indigo-600" />
           </div>
-          <div className="text-xl font-bold font-mono text-indigo-300">
+          <div className="text-2xl font-bold font-mono text-indigo-700">
             {metrics.substitutedCount}{' '}
-            <span className="text-xs font-normal text-slate-400">
+            <span className="text-xs font-normal text-slate-500">
               / {metrics.totalCount} tranches
             </span>
           </div>
@@ -378,19 +383,19 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
       </div>
 
       {/* Main AG Grid Card */}
-      <div className="rounded-2xl border border-slate-800 bg-[#0D1424] p-4 space-y-3">
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-white">
-                AG Grid Atomic Settlement &amp; Rollback Audit Ledger
+              <h2 className="text-base font-bold text-slate-900">
+                AG Grid Orders &amp; Settlement Ledger
               </h2>
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30">
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-[#003087] border border-blue-200">
                 AG Grid Community v33
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Every PayPal authorization hold, multi-tranche partial capture, AI swap, and atomic void recorded per seller leg.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Complete history of authorized holds, multi-seller tranche captures, automatic swaps, and voided orders.
             </p>
           </div>
 
@@ -402,14 +407,14 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
                 placeholder="Search ledger..."
                 value={quickFilterText}
                 onChange={(e) => setQuickFilterText(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 w-44 sm:w-56"
+                className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#0070BA] w-44 sm:w-56"
               />
             </div>
 
             <button
               type="button"
               onClick={onRefresh}
-              className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-200 inline-flex items-center gap-1.5 cursor-pointer transition"
+              className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-medium text-slate-700 inline-flex items-center gap-1.5 cursor-pointer transition"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Refresh
@@ -419,7 +424,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
               type="button"
               onClick={handleExportCsv}
               disabled={entries.length === 0}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-500 disabled:opacity-40 text-xs font-medium text-white inline-flex items-center gap-1.5 cursor-pointer transition shadow-sm"
+              className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer transition shadow-xs"
             >
               <FileSpreadsheet className="h-3.5 w-3.5" />
               Export CSV
@@ -429,7 +434,7 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
               type="button"
               onClick={handleExportJson}
               disabled={entries.length === 0}
-              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-xs font-medium text-white inline-flex items-center gap-1.5 cursor-pointer transition shadow-sm"
+              className="px-3 py-1.5 rounded-lg bg-[#003087] hover:bg-[#002569] disabled:opacity-40 text-xs font-semibold text-white inline-flex items-center gap-1.5 cursor-pointer transition shadow-xs"
             >
               <Download className="h-3.5 w-3.5" />
               Export JSON
@@ -438,9 +443,9 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
         </div>
 
         {/* AG Grid React Table Container */}
-        <div className="h-[540px] w-full rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+        <div className="h-[540px] w-full rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
           <AgGridReact<LedgerEntry>
-            theme={darkTheme}
+            theme={themeQuartz}
             rowData={entries}
             columnDefs={colDefs}
             quickFilterText={quickFilterText}
@@ -457,10 +462,10 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 pt-1 px-1">
+        <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-500 pt-1 px-1">
           <span className="flex items-center gap-1.5">
-            <Filter className="h-3 w-3 text-cyan-400" />
-            Quick filter active: search across seller names, PayPal IDs, item SKUs, and AI notes.
+            <Filter className="h-3 w-3 text-[#0070BA]" />
+            Live filter active: search across seller names, PayPal IDs, item SKUs, and AI notes.
           </span>
           <span className="font-mono text-slate-500">
             Qualified for AG Grid Sponsor Award · ag-grid-react &amp; ag-grid-community
