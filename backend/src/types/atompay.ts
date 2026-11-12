@@ -4,7 +4,8 @@ export type VendorFaultMode =
   | 'IN_STOCK'
   | 'OUT_OF_STOCK'
   | 'PRICE_SPIKE'
-  | 'TIMEOUT';
+  | 'TIMEOUT'
+  | 'DELAYED';
 
 export type LegStatus =
   | 'PENDING'

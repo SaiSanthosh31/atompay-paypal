@@ -1,0 +1,48 @@
+services:
+  # -----------------------------------------------------------
+  # Backend: Node.js Express 2PC Orchestrator & PayPal Sandbox API
+  # -----------------------------------------------------------
+  - type: web
+    name: atompay-backend
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 4000
+      - key: NODE_ENV
+        value: production
+      - key: PAYPAL_MODE
+        value: sandbox
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: CORS_ORIGIN
+        value: "*"
+
+  # -----------------------------------------------------------
+  # Frontend: React 19 + Vite + Tailwind CSS + AG Grid Community
+  # -----------------------------------------------------------
+  - type: web
+    name: atompay-frontend
+    runtime: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://atompay-backend.onrender.com/api/*
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -30,7 +30,7 @@ const FAULT_OPTIONS: Array<{
   { value: 'IN_STOCK', label: 'In Stock', badge: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30' },
   { value: 'OUT_OF_STOCK', label: 'Out of Stock', badge: 'text-rose-300 bg-rose-500/10 border-rose-500/30' },
   { value: 'PRICE_SPIKE', label: 'Price +28%', badge: 'text-amber-300 bg-amber-500/10 border-amber-500/30' },
-  { value: 'TIMEOUT', label: 'API Timeout', badge: 'text-purple-300 bg-purple-500/10 border-purple-500/30' },
+  { value: 'DELAYED', label: 'Delayed', badge: 'text-purple-300 bg-purple-500/10 border-purple-500/30' },
 ];
 
 export function ScenarioBuilder({
@@ -156,6 +156,58 @@ export function ScenarioBuilder({
           <p className="text-[11px] text-slate-400">
             Inject a failure on any seller before running Phase 2 verification to watch AtomPay protect the buyer.
           </p>
+
+          {/* Quick Demo Shortcuts for 3-minute video presentation */}
+          <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <Sparkles className="h-3 w-3 text-cyan-400" />
+              Live Demo Presets (1-Click)
+            </span>
+            <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+              <button
+                type="button"
+                onClick={onResetFaults}
+                className="px-2 py-1.5 rounded-lg text-[10px] font-medium bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-left transition cursor-pointer"
+              >
+                1. Happy Path (All Stocked)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeScenario.items.length > 1) {
+                    onSetFault(activeScenario.items[1].id, 'OUT_OF_STOCK');
+                    onToggleAutoSubstitute(true);
+                  }
+                }}
+                className="px-2 py-1.5 rounded-lg text-[10px] font-medium bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-left transition cursor-pointer"
+              >
+                2. AI Substitute Swap
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeScenario.items.length > 0) {
+                    onSetFault(activeScenario.items[0].id, 'OUT_OF_STOCK');
+                    onToggleAutoSubstitute(false);
+                  }
+                }}
+                className="px-2 py-1.5 rounded-lg text-[10px] font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-left transition cursor-pointer"
+              >
+                3. 2PC Atomic Rollback
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeScenario.items.length > 0) {
+                    onSetFault(activeScenario.items[0].id, 'PRICE_SPIKE');
+                  }
+                }}
+                className="px-2 py-1.5 rounded-lg text-[10px] font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-left transition cursor-pointer"
+              >
+                4. Price Spike Cap Breach
+              </button>
+            </div>
+          </div>
 
           <div className="space-y-2.5">
             {activeScenario.items.map((item) => (
