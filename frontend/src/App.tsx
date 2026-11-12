@@ -256,7 +256,7 @@ export function App() {
         wireCount={activeBundle?.wireEvents.length || 0}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-5 space-y-4">
         {error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs text-rose-800 flex items-center justify-between gap-2">
             <span>{error}</span>

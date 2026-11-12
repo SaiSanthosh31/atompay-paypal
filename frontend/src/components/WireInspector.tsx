@@ -12,15 +12,10 @@ export function WireInspector({ events }: WireInspectorProps) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Code2 className="h-4 w-4 text-[#003087]" />
-            PayPal REST API Trace
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Live OAuth2, Orders v2, Payments v2 Capture/Void, and Invoicing v2 calls for the current checkout session.
-          </p>
-        </div>
+        <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <Code2 className="h-4 w-4 text-[#003087]" />
+          PayPal API Logs
+        </h2>
         <span className="text-xs font-mono text-slate-500">
           {events.length} requests
         </span>

@@ -353,69 +353,52 @@ export function LedgerGrid({ entries, onRefresh }: LedgerGridProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Total Auth Holds</span>
+            <span>Holds</span>
             <Layers className="h-4 w-4 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900">
+          <div className="text-xl font-bold font-mono text-slate-900 mt-1">
             ${metrics.totalHolds.toFixed(2)}
           </div>
-          <p className="text-[11px] text-slate-500">Locked via PayPal Orders v2</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Settled &amp; Charged</span>
+            <span>Captured</span>
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold font-mono text-emerald-700">
+          <div className="text-xl font-bold font-mono text-emerald-700 mt-1">
             ${metrics.totalCaptured.toFixed(2)}
           </div>
-          <p className="text-[11px] text-slate-500">Atomic Multi-Tranche Captures</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Protected &amp; Voided</span>
+            <span>Voided</span>
             <ShieldCheck className="h-4 w-4 text-rose-600" />
           </div>
-          <div className="text-2xl font-bold font-mono text-rose-700">
+          <div className="text-xl font-bold font-mono text-rose-700 mt-1">
             ${metrics.totalProtected.toFixed(2)}
           </div>
-          <p className="text-[11px] text-slate-500">Saved by 2PC Atomic VOID</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-1 shadow-xs">
+        <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>AI Swaps &amp; Audits</span>
+            <span>AI Swaps</span>
             <Sparkles className="h-4 w-4 text-indigo-600" />
           </div>
-          <div className="text-2xl font-bold font-mono text-indigo-700">
-            {metrics.substitutedCount}{' '}
-            <span className="text-xs font-normal text-slate-500">
-              / {metrics.totalCount} tranches
-            </span>
+          <div className="text-xl font-bold font-mono text-indigo-700 mt-1">
+            {metrics.substitutedCount} / {metrics.totalCount}
           </div>
-          <p className="text-[11px] text-slate-500">Gemini Compatible Recoveries</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-xs">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-slate-900">
-                Orders &amp; Settlement Ledger
-              </h2>
-              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-[#003087] border border-blue-200">
-                AG Grid v33
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Complete history of authorized holds, multi-seller tranche captures, automatic swaps, and voided orders.
-            </p>
-          </div>
+          <h2 className="text-sm font-bold text-slate-900">
+            Orders &amp; Settlement Ledger
+          </h2>
 
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
